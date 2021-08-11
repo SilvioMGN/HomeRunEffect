@@ -233,39 +233,39 @@ testBeforeHR <- beforeHR
 
 # total
 
-testAfterHR %>% group_by(pitcher) %>% mutate(totalStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
+testAfterHR <- testAfterHR %>% group_by(pitcher) %>% mutate(totalStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
 
-testAfterHR %>% group_by(pitcher) %>% mutate(totalBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
+testAfterHR <- testAfterHR %>% group_by(pitcher) %>% mutate(totalBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
 
-testAfterHR %>% group_by(pitcher) %>% mutate(totalBIPPct = 1 - (StrPct + BallPct))
+testAfterHR <- testAfterHR %>% group_by(pitcher) %>% mutate(totalBIPPct = 1 - (totalStrPct + totalBallPct))
 
 
 # single game
 
-testAfterHR %>% group_by(pitcher, game_date) %>% mutate(gameStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
+testAfterHR <- testAfterHR %>% group_by(pitcher, game_date) %>% mutate(gameStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
 
-testAfterHR %>% group_by(pitcher, game_date) %>% mutate(gameBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
+testAfterHR <- testAfterHR %>% group_by(pitcher, game_date) %>% mutate(gameBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
 
-testAfterHR %>% group_by(pitcher, game_date) %>% mutate(gameBIPPct = 1 - (StrPct + BallPct))
+testAfterHR <- testAfterHR %>% group_by(pitcher, game_date) %>% mutate(gameBIPPct = 1 - (gameStrPct + gameBallPct))
 
 
 ## beforeHR
 
 # total
 
-testBeforeHR %>% group_by(pitcher) %>% mutate(totalStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
+testBeforeHR <- testBeforeHR %>% group_by(pitcher) %>% mutate(totalStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
 
-testBeforeHR %>% group_by(pitcher) %>% mutate(totalBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
+testBeforeHR <- testBeforeHR %>% group_by(pitcher) %>% mutate(totalBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
 
-testBeforeHR %>% group_by(pitcher) %>% mutate(totalBIPPct = 1 - (StrPct + BallPct))
+testBeforeHR <- testBeforeHR %>% group_by(pitcher) %>% mutate(totalBIPPct = 1 - (totalStrPct + totalBallPct))
 
 # single game
 
-testBeforeHR %>% group_by(pitcher, game_date) %>% mutate(gameStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
+testBeforeHR <- testBeforeHR %>% group_by(pitcher, game_date) %>% mutate(gameStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
 
-testBeforeHR %>% group_by(pitcher, game_date) %>% mutate(gameBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
+testBeforeHR <- testBeforeHR %>% group_by(pitcher, game_date) %>% mutate(gameBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
 
-testBeforeHR %>% group_by(pitcher, game_date) %>% mutate(gameBIPPct = 1 - (StrPct + BallPct))
+testBeforeHR <- testBeforeHR %>% group_by(pitcher, game_date) %>% mutate(gameBIPPct = 1 - (gameStrPct + gameBallPct))
 
 
 ## Season total
@@ -275,4 +275,13 @@ pitching2020 %>% group_by(pitcher) %>% mutate(totalStrPct = sum(type=="S")/(sum(
 pitching2020 %>% group_by(pitcher) %>% mutate(totalBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
 
 pitching2020 %>% group_by(pitcher) %>% mutate(totalBIPPct = 1 - (StrPct + BallPct))
+
+# remove unused columns
+
+testAfterHR <- testAfterHR %>% select(pitcher, game_date, description, stand, type, balls, strikes, game_year, plate_x, plate_z, hit_type, totalStrPct, totalBallPct, totalBIPPct, gameStrPct, gameBallPct, gameBIPPct)
+
+testBeforeHR <- testBeforeHR %>% select(pitcher, game_date, description, stand, type, balls, strikes, game_year, plate_x, plate_z, hit_type, totalStrPct, totalBallPct, totalBIPPct, gameStrPct, gameBallPct, gameBIPPct)
+
+
+
 
