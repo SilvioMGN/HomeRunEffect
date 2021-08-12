@@ -4,13 +4,9 @@ library(readr)
 library(tidyverse)
 library(baseballr)
 
-# AB-by-AB data
-fields <- read_csv("~/fields.csv")
-all2020 <- read_csv("~/all2020.csv")
-giolito2021 <- read_Csv("~/giolito2021.csv")
-colnames(all2020) <- fields$Header
+# name/id data from __
 
-# Pitch-by-pitch data
+playeridmap <- read_csv("~/playeridmap.csv")
 
 ## Function annual_statcast_query from Bill Petti
 
@@ -221,8 +217,8 @@ write.csv(allHR_2020, 'allHR_2020.csv')
 
 
 
-testAfterHR <- afterHR
-testBeforeHR <- beforeHR
+testAfterHR <- afterHR_2020
+testBeforeHR <- beforeHR_2020
 
 # calculate Strike Percentage (StrPct), Ball Percentage (BallPct) and the Ball-in-Play Percentage (BipPct) for afterHR and beforeHR
 
@@ -278,10 +274,62 @@ pitching2020 %>% group_by(pitcher) %>% mutate(totalBIPPct = 1 - (StrPct + BallPc
 
 # remove unused columns
 
-testAfterHR <- testAfterHR %>% select(pitcher, game_date, description, stand, type, balls, strikes, game_year, plate_x, plate_z, hit_type, totalStrPct, totalBallPct, totalBIPPct, gameStrPct, gameBallPct, gameBIPPct)
+testAfterHR <- testAfterHR %>% select(pitcher, game_date, description, stand, p_throws, type, balls, strikes, pitch_number, game_year, plate_x, plate_z, hit_type, totalStrPct, totalBallPct, totalBIPPct, gameStrPct, gameBallPct, gameBIPPct)
 
-testBeforeHR <- testBeforeHR %>% select(pitcher, game_date, description, stand, type, balls, strikes, game_year, plate_x, plate_z, hit_type, totalStrPct, totalBallPct, totalBIPPct, gameStrPct, gameBallPct, gameBIPPct)
+testBeforeHR <- testBeforeHR %>% select(pitcher, game_date, description, stand, p_throws, type, balls, strikes, pitch_number, game_year, plate_x, plate_z, hit_type, totalStrPct, totalBallPct, totalBIPPct, gameStrPct, gameBallPct, gameBIPPct)
+
+# only one row per game
+
+testBeforeHR <- testBeforeHR %>% distinct(pitcher, game_date, .keep_all = TRUE)
+
+testAfterHR <- testAfterHR %>% distinct(pitcher, game_date, .keep_all = TRUE)
 
 
 
+combineTest <- merge(x=testBeforeHR, y=testAfterHR, by=c("pitcher", "game_date"), all.y = TRUE)
+
+combineTest$description.y <- NULL
+combineTest$stand.y <- NULL
+combineTest$p_throws.y <- NULL
+combineTest$type.y <- NULL
+combineTest$balls.y <- NULL
+combineTest$strikes.y <- NULL
+combineTest$pitch_number.y <- NULL
+combineTest$game_year.y <- NULL
+combineTest$plate_x.x.y <- NULL
+combineTest$plate_z.x.y <- NULL
+combineTest$plate_x.y <- NULL
+combineTest$plate_z.y <- NULL
+combineTest$hit_type.y <- NULL
+names(combineTest)[20]  <- "totalStrPct_after"
+names(combineTest)[21]  <- "totalBallPct_after"
+names(combineTest)[22]  <- "totalBIPPct_after"
+names(combineTest)[23]  <- "gameStrPct_after"
+names(combineTest)[24]  <- "gameBallPct_after"
+names(combineTest)[25]  <- "gameBIPPct_after"
+names(combineTest)[14]  <- "totalStrPct_before"
+names(combineTest)[15]  <- "totalBallPct_before"
+names(combineTest)[16]  <- "totalBIPPct_before"
+names(combineTest)[17]  <- "gameStrPct_before"
+names(combineTest)[18]  <- "gameBallPct_before"
+names(combineTest)[25]  <- "gameBIPPct_before"
+
+
+ggplot(combineTest, aes(x=totalBIPPct_before, y=totalBIPPct_after)) + geom_point() + xlim(0:1) + ylim(0:1)
+
+combineTest$difference_totalBIP <- (combineTest$totalBIPPct_after - combineTest$totalBIPPct_before)
+
+ggplot(combineTest, aes(x=difference_totalBIP, y=pitcher)) + geom_point()  
+
+# merge player names and look at the data -> generate total difference for Str and Balls and also generate it on a game level
+# maybe look at players who have only had a minimum numbers of Home Runs -> maybe 3+?, maybe 5+?
+# download ERA, WHIP, K%, etc. data and plot it with the difference
+
+combineTest <- merge(x = combineTest, y = playeridmap, by.x = "pitcher", by.y = "MLBID", all.x = TRUE)
+
+fangraphsPitching2020 <- read_csv("~/fangraphsPitching2020.csv")
+
+combineTestTotal <- combineTest %>% distinct(pitcher, .keep_all = TRUE)
+
+combineTestTotal <- merge(x = combineTestTotal, y = fangraphsPitching2020, by.x = "IDFANGRAPHS", by.y = "playerid", all.x = TRUE)
 
