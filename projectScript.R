@@ -197,19 +197,23 @@ for (i in 1:max(pitching2020$index)) {
 }
 
 
-# generate beforeHR
+## generate beforeHR
 
 # Because of the slow speed of rbind, we generate beforeHR by removing all elements of afterHR and allHR from pitching2020
 
 intermediate <- pitching2020 %>% group_by(index, pitch_counter) %>% anti_join(afterHR, pitching2020, by=c("index", "pitch_counter"))
 
-beforeHR <- anti_join(intermediate, allHR_2020, by=c("index", "pitch_counter"))
 
 # remove all Home Runs from the afterHR dataset
 
+allHR_2020 <- afterHR %>% filter(HR_index == TRUE)
+
 afterHR <- afterHR %>% filter(HR_index==FALSE |is.na(HR_index))
 
-allHR_2020 <- afterHR %>% filter(HR_index == TRUE)
+beforeHR <- anti_join(intermediate, allHR_2020, by=c("index", "pitch_counter"))
+
+
+# create new csv files
 
 write.csv(afterHR, 'afterHR_2020.csv')
 write.csv(beforeHR, 'beforeHR_2020.csv')
@@ -217,119 +221,88 @@ write.csv(allHR_2020, 'allHR_2020.csv')
 
 
 
-testAfterHR <- afterHR_2020
-testBeforeHR <- beforeHR_2020
-
 # calculate Strike Percentage (StrPct), Ball Percentage (BallPct) and the Ball-in-Play Percentage (BipPct) for afterHR and beforeHR
-
-##### IMPORTANT: Calculate all these percentages as totals (group_by(pitcher)) and as game-specific (group_by(pitcher, game_date))
-##### Total prior to HR should most likely be same as Total StrPct, etc. -> The interesting thing is if afterHR will be much different from beforeHR for specific Games -> but total is also interesting
 
 ## afterHR
 
 # total
 
-testAfterHR <- testAfterHR %>% group_by(pitcher) %>% mutate(totalStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
+afterHR_2020 <- afterHR_2020 %>% group_by(pitcher) %>% mutate(totalStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
 
-testAfterHR <- testAfterHR %>% group_by(pitcher) %>% mutate(totalBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
+afterHR_2020 <- afterHR_2020 %>% group_by(pitcher) %>% mutate(totalBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
 
-testAfterHR <- testAfterHR %>% group_by(pitcher) %>% mutate(totalBIPPct = 1 - (totalStrPct + totalBallPct))
-
-
-# single game
-
-testAfterHR <- testAfterHR %>% group_by(pitcher, game_date) %>% mutate(gameStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
-
-testAfterHR <- testAfterHR %>% group_by(pitcher, game_date) %>% mutate(gameBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
-
-testAfterHR <- testAfterHR %>% group_by(pitcher, game_date) %>% mutate(gameBIPPct = 1 - (gameStrPct + gameBallPct))
+afterHR_2020 <- afterHR_2020 %>% group_by(pitcher) %>% mutate(totalBIPPct = 1 - (totalStrPct + totalBallPct))
 
 
 ## beforeHR
 
 # total
 
-testBeforeHR <- testBeforeHR %>% group_by(pitcher) %>% mutate(totalStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
+beforeHR_2020 <- beforeHR_2020 %>% group_by(pitcher) %>% mutate(totalStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
 
-testBeforeHR <- testBeforeHR %>% group_by(pitcher) %>% mutate(totalBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
+beforeHR_2020 <- beforeHR_2020 %>% group_by(pitcher) %>% mutate(totalBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
 
-testBeforeHR <- testBeforeHR %>% group_by(pitcher) %>% mutate(totalBIPPct = 1 - (totalStrPct + totalBallPct))
-
-# single game
-
-testBeforeHR <- testBeforeHR %>% group_by(pitcher, game_date) %>% mutate(gameStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
-
-testBeforeHR <- testBeforeHR %>% group_by(pitcher, game_date) %>% mutate(gameBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
-
-testBeforeHR <- testBeforeHR %>% group_by(pitcher, game_date) %>% mutate(gameBIPPct = 1 - (gameStrPct + gameBallPct))
-
+beforeHR_2020 <- beforeHR_2020 %>% group_by(pitcher) %>% mutate(totalBIPPct = 1 - (totalStrPct + totalBallPct))
 
 ## Season total
 
-pitching2020 %>% group_by(pitcher) %>% mutate(totalStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
+pitching2020 <- pitching2020 %>% group_by(pitcher) %>% mutate(totalStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
 
-pitching2020 %>% group_by(pitcher) %>% mutate(totalBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
+pitching2020 <- pitching2020 %>% group_by(pitcher) %>% mutate(totalBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
 
-pitching2020 %>% group_by(pitcher) %>% mutate(totalBIPPct = 1 - (StrPct + BallPct))
-
-# remove unused columns
-
-testAfterHR <- testAfterHR %>% select(pitcher, game_date, description, stand, p_throws, type, balls, strikes, pitch_number, game_year, plate_x, plate_z, hit_type, totalStrPct, totalBallPct, totalBIPPct, gameStrPct, gameBallPct, gameBIPPct)
-
-testBeforeHR <- testBeforeHR %>% select(pitcher, game_date, description, stand, p_throws, type, balls, strikes, pitch_number, game_year, plate_x, plate_z, hit_type, totalStrPct, totalBallPct, totalBIPPct, gameStrPct, gameBallPct, gameBIPPct)
-
-# only one row per game
-
-testBeforeHR <- testBeforeHR %>% distinct(pitcher, game_date, .keep_all = TRUE)
-
-testAfterHR <- testAfterHR %>% distinct(pitcher, game_date, .keep_all = TRUE)
+pitching2020 <- pitching2020 %>% group_by(pitcher) %>% mutate(totalBIPPct = 1 - (totalStrPct + totalBallPct))
 
 
+# remove columns that we do not need
 
-combineTest <- merge(x=testBeforeHR, y=testAfterHR, by=c("pitcher", "game_date"), all.y = TRUE)
+afterHR_2020 <- afterHR_2020 %>% select(pitcher, p_throws, totalStrPct, totalBallPct, totalBIPPct)
 
-combineTest$description.y <- NULL
-combineTest$stand.y <- NULL
-combineTest$p_throws.y <- NULL
-combineTest$type.y <- NULL
-combineTest$balls.y <- NULL
-combineTest$strikes.y <- NULL
-combineTest$pitch_number.y <- NULL
-combineTest$game_year.y <- NULL
-combineTest$plate_x.x.y <- NULL
-combineTest$plate_z.x.y <- NULL
-combineTest$plate_x.y <- NULL
-combineTest$plate_z.y <- NULL
-combineTest$hit_type.y <- NULL
-names(combineTest)[20]  <- "totalStrPct_after"
-names(combineTest)[21]  <- "totalBallPct_after"
-names(combineTest)[22]  <- "totalBIPPct_after"
-names(combineTest)[23]  <- "gameStrPct_after"
-names(combineTest)[24]  <- "gameBallPct_after"
-names(combineTest)[25]  <- "gameBIPPct_after"
-names(combineTest)[14]  <- "totalStrPct_before"
-names(combineTest)[15]  <- "totalBallPct_before"
-names(combineTest)[16]  <- "totalBIPPct_before"
-names(combineTest)[17]  <- "gameStrPct_before"
-names(combineTest)[18]  <- "gameBallPct_before"
-names(combineTest)[25]  <- "gameBIPPct_before"
+beforeHR_2020 <- beforeHR_2020 %>% select(pitcher, p_throws, totalStrPct, totalBallPct, totalBIPPct)
 
 
-ggplot(combineTest, aes(x=totalBIPPct_before, y=totalBIPPct_after)) + geom_point() + xlim(0:1) + ylim(0:1)
+# because we are only interested in the total numbers of StrPct, etc., we can use only one row per player
 
-combineTest$difference_totalBIP <- (combineTest$totalBIPPct_after - combineTest$totalBIPPct_before)
+beforeHR_2020 <- beforeHR_2020 %>% distinct(pitcher, .keep_all = TRUE)
 
-ggplot(combineTest, aes(x=difference_totalBIP, y=pitcher)) + geom_point()  
+afterHR_2020 <- afterHR_2020 %>% distinct(pitcher, .keep_all = TRUE)
 
-# merge player names and look at the data -> generate total difference for Str and Balls and also generate it on a game level
-# maybe look at players who have only had a minimum numbers of Home Runs -> maybe 3+?, maybe 5+?
-# download ERA, WHIP, K%, etc. data and plot it with the difference
 
-combineTest <- merge(x = combineTest, y = playeridmap, by.x = "pitcher", by.y = "MLBID", all.x = TRUE)
+# combine afterHR and beforeHR
 
-fangraphsPitching2020 <- read_csv("~/fangraphsPitching2020.csv")
+combined <- merge(x=beforeHR_2020, y=afterHR_2020, by="pitcher", all.y = TRUE)
 
-combineTestTotal <- combineTest %>% distinct(pitcher, .keep_all = TRUE)
+combined$p_throws.y <- NULL
+names(combined)[6]  <- "totalStrPct_after"
+names(combined)[7]  <- "totalBallPct_after"
+names(combined)[8]  <- "totalBIPPct_after"
+names(combined)[3]  <- "totalStrPct_before"
+names(combined)[4]  <- "totalBallPct_before"
+names(combined)[5]  <- "totalBIPPct_before"
 
-combineTestTotal <- merge(x = combineTestTotal, y = fangraphsPitching2020, by.x = "IDFANGRAPHS", by.y = "playerid", all.x = TRUE)
 
+# three new columns that calculate the difference between Balls in Play (BIP), Strikes (Str) and Balls percentages before and after first Home Run
+
+combined$difference_totalBIP <- (combined$totalBIPPct_after - combined$totalBIPPct_before)
+
+combined$difference_totalStr <- (combined$totalStrPct_after - combined$totalStrPct_before)
+
+combined$difference_totalBall <- (combined$totalBallPct_after - combined$totalBallPct_before)
+
+
+
+# add player names 
+
+combined <- merge(x = combined, y = playeridmap, by.x = "pitcher", by.y = "MLBID", all.x = TRUE)
+
+
+
+# pitching data from qualified pitchers 
+
+fangraphsPitching2020_qualified <- read_csv("~/fangraphsPitching2020_qualified.csv")
+
+combined <- merge(x = combined, y = fangraphsPitching2020, by.x = "IDFANGRAPHS", by.y = "playerid", all.y = TRUE)
+
+
+# new csv file that contains the qualified pitchers and their StrPct, BallPct, BIPPct difference
+
+write.csv(combined, 'differenceAfterHR_2020_qualified')
