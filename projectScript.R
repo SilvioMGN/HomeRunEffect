@@ -6,7 +6,7 @@ library(baseballr)
 
 # name/id data from __
 
-playeridmap <- read_csv("~/playeridmap.csv")
+#playeridmap <- read_csv("~/playeridmap.csv")
 
 ## Function annual_statcast_query from Bill Petti
 
@@ -151,6 +151,11 @@ pitching2020 <- arrange(pitching2020, game_date, pitcher, inning, at_bat_number,
 
 pitching2020 <- pitching2020 %>% mutate(HR_index = hit_type == 4) 
 
+# Regular Season and Postseason
+
+pitching2020 <- pitching2020 %>%
+  filter(game_type != "P")
+
 # Adding a unique index for pitcher and game combination
 
 pitching2020$index <- pitching2020 %>% group_by(game_date, pitcher) %>% group_indices(game_date, pitcher)
@@ -213,13 +218,6 @@ afterHR <- afterHR %>% filter(HR_index==FALSE |is.na(HR_index))
 beforeHR <- anti_join(intermediate, allHR_2020, by=c("index", "pitch_counter"))
 
 
-# create new csv files
-
-write.csv(afterHR, 'afterHR_2020.csv')
-write.csv(beforeHR, 'beforeHR_2020.csv')
-write.csv(allHR_2020, 'allHR_2020.csv')
-
-
 
 # calculate Strike Percentage (StrPct), Ball Percentage (BallPct) and the Ball-in-Play Percentage (BipPct) for afterHR and beforeHR
 
@@ -267,6 +265,13 @@ beforeHR_2020 <- beforeHR_2020 %>% distinct(pitcher, .keep_all = TRUE)
 afterHR_2020 <- afterHR_2020 %>% distinct(pitcher, .keep_all = TRUE)
 
 
+# create new csv files
+
+write.csv(afterHR, 'afterHR_2020.csv')
+write.csv(beforeHR, 'beforeHR_2020.csv')
+write.csv(allHR_2020, 'allHR_2020.csv')
+
+
 # combine afterHR and beforeHR
 
 combined <- merge(x=beforeHR_2020, y=afterHR_2020, by="pitcher", all.y = TRUE)
@@ -288,7 +293,9 @@ combined$difference_totalStr <- (combined$totalStrPct_after - combined$totalStrP
 
 combined$difference_totalBall <- (combined$totalBallPct_after - combined$totalBallPct_before)
 
+# write a csv with combined data
 
+write.csv(combined, 'combined_2020.csv')
 
 # add player names 
 
