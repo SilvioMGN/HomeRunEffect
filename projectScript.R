@@ -139,45 +139,45 @@ format_append_statcast <- function(df) {
   return(df)
 }
 
-# Pitching data from 2020
+# Pitching data from the specified year 
 
-data <- annual_statcast_query(2020)
+data <- annual_statcast_query(2019)
 
-pitching2020 <- format_append_statcast(data)
+pitching2019 <- format_append_statcast(data)
 
-pitching2020 <- arrange(pitching2020, game_date, pitcher, inning, at_bat_number, pitch_number)
+pitching2019 <- arrange(pitching2019, game_date, pitcher, inning, at_bat_number, pitch_number)
+
+# Only Regular Season and Postseason
+
+pitching2019 <- pitching2019 %>%
+  filter(game_type != "S")
 
 # Adding a boolean variable for HRs
 
-pitching2020 <- pitching2020 %>% mutate(HR_index = hit_type == 4) 
-
-# Regular Season and Postseason
-
-pitching2020 <- pitching2020 %>%
-  filter(game_type != "P")
+pitching2019 <- pitching2019 %>% mutate(HR_index = hit_type == 4) 
 
 # Adding a unique index for pitcher and game combination
 
-pitching2020$index <- pitching2020 %>% group_by(game_date, pitcher) %>% group_indices(game_date, pitcher)
+pitching2019$index <- pitching2019 %>% group_by(game_date, pitcher) %>% group_indices(game_date, pitcher)
 
-pitching2020 <- pitching2020 %>% group_by(game_date, pitcher) %>% mutate(pitch_counter = row_number(game_date))
+pitching2019 <- pitching2019 %>% group_by(game_date, pitcher) %>% mutate(pitch_counter = row_number(game_date))
 
 # create a helper dataset and two datasets for all pitches before and after the first Home Run
-helper <- pitching2020[0,]
+helper <- pitching2019[0,]
 afterHR <- helper
 beforeHR <- helper
 
 count = 0
 
+# iterate over every pitching performances for afterHR 
+## This takes a lot of time, so this needs to be improved in the future
 
-# iterate over every pitching performances for afterHR
-
-for (i in 1:max(pitching2020$index)) {
+for (i in 1:max(pitching2019$index)) {
   
   count = count + 1
   print(count)
   
-  helper <- pitching2020[pitching2020$index == i,]
+  helper <- pitching2019[pitching2019$index == i,]
   
   # iterate over all pitches of a pitching performance
   
@@ -204,18 +204,18 @@ for (i in 1:max(pitching2020$index)) {
 
 ## generate beforeHR
 
-# Because of the slow speed of rbind, we generate beforeHR by removing all elements of afterHR and allHR from pitching2020
+# Because of the slow speed of rbind, we generate beforeHR by removing all elements of afterHR and allHR from the pitching data
 
-intermediate <- pitching2020 %>% group_by(index, pitch_counter) %>% anti_join(afterHR, pitching2020, by=c("index", "pitch_counter"))
+intermediate <- pitching2019 %>% group_by(index, pitch_counter) %>% anti_join(afterHR, pitching2019, by=c("index", "pitch_counter"))
 
 
 # remove all Home Runs from the afterHR dataset
 
-allHR_2020 <- afterHR %>% filter(HR_index == TRUE)
+allHR_2019 <- afterHR %>% filter(HR_index == TRUE)
 
-afterHR <- afterHR %>% filter(HR_index==FALSE |is.na(HR_index))
+afterHR_2019 <- afterHR %>% filter(HR_index==FALSE |is.na(HR_index))
 
-beforeHR <- anti_join(intermediate, allHR_2020, by=c("index", "pitch_counter"))
+beforeHR_2019 <- anti_join(intermediate, allHR_2019, by=c("index", "pitch_counter"))
 
 
 
@@ -225,56 +225,56 @@ beforeHR <- anti_join(intermediate, allHR_2020, by=c("index", "pitch_counter"))
 
 # total
 
-afterHR_2020 <- afterHR_2020 %>% group_by(pitcher) %>% mutate(totalStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
+afterHR_2019 <- afterHR_2019 %>% group_by(pitcher) %>% mutate(totalStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
 
-afterHR_2020 <- afterHR_2020 %>% group_by(pitcher) %>% mutate(totalBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
+afterHR_2019 <- afterHR_2019 %>% group_by(pitcher) %>% mutate(totalBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
 
-afterHR_2020 <- afterHR_2020 %>% group_by(pitcher) %>% mutate(totalBIPPct = 1 - (totalStrPct + totalBallPct))
+afterHR_2019 <- afterHR_2019 %>% group_by(pitcher) %>% mutate(totalBIPPct = 1 - (totalStrPct + totalBallPct))
 
 
 ## beforeHR
 
 # total
 
-beforeHR_2020 <- beforeHR_2020 %>% group_by(pitcher) %>% mutate(totalStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
+beforeHR_2019 <- beforeHR_2019 %>% group_by(pitcher) %>% mutate(totalStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
 
-beforeHR_2020 <- beforeHR_2020 %>% group_by(pitcher) %>% mutate(totalBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
+beforeHR_2019 <- beforeHR_2019 %>% group_by(pitcher) %>% mutate(totalBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
 
-beforeHR_2020 <- beforeHR_2020 %>% group_by(pitcher) %>% mutate(totalBIPPct = 1 - (totalStrPct + totalBallPct))
+beforeHR_2019 <- beforeHR_2019 %>% group_by(pitcher) %>% mutate(totalBIPPct = 1 - (totalStrPct + totalBallPct))
 
 ## Season total
 
-pitching2020 <- pitching2020 %>% group_by(pitcher) %>% mutate(totalStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
+pitching2019 <- pitching2019 %>% group_by(pitcher) %>% mutate(totalStrPct = sum(type=="S")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
 
-pitching2020 <- pitching2020 %>% group_by(pitcher) %>% mutate(totalBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
+pitching2019 <- pitching2019 %>% group_by(pitcher) %>% mutate(totalBallPct = sum(type=="B")/(sum(type=="S") + sum(type=="X") + sum(type=="B")))
 
-pitching2020 <- pitching2020 %>% group_by(pitcher) %>% mutate(totalBIPPct = 1 - (totalStrPct + totalBallPct))
+pitching2019 <- pitching2019 %>% group_by(pitcher) %>% mutate(totalBIPPct = 1 - (totalStrPct + totalBallPct))
 
 
 # remove columns that we do not need
 
-afterHR_2020 <- afterHR_2020 %>% select(pitcher, p_throws, totalStrPct, totalBallPct, totalBIPPct)
+afterHR_2019 <- afterHR_2019 %>% select(pitcher, p_throws, totalStrPct, totalBallPct, totalBIPPct)
 
-beforeHR_2020 <- beforeHR_2020 %>% select(pitcher, p_throws, totalStrPct, totalBallPct, totalBIPPct)
+beforeHR_2019 <- beforeHR_2019 %>% select(pitcher, p_throws, totalStrPct, totalBallPct, totalBIPPct)
 
 
 # because we are only interested in the total numbers of StrPct, etc., we can use only one row per player
 
-beforeHR_2020 <- beforeHR_2020 %>% distinct(pitcher, .keep_all = TRUE)
+beforeHR_2019 <- beforeHR_2019 %>% distinct(pitcher, .keep_all = TRUE)
 
-afterHR_2020 <- afterHR_2020 %>% distinct(pitcher, .keep_all = TRUE)
+afterHR_2019 <- afterHR_2019 %>% distinct(pitcher, .keep_all = TRUE)
 
 
 # create new csv files
 
-write.csv(afterHR, 'afterHR_2020.csv')
-write.csv(beforeHR, 'beforeHR_2020.csv')
-write.csv(allHR_2020, 'allHR_2020.csv')
+write.csv(afterHR_2019, 'afterHR_2019.csv')
+write.csv(beforeHR_2019, 'beforeHR_2019.csv')
+write.csv(allHR_2019, 'allHR_2019.csv')
 
 
 # combine afterHR and beforeHR
 
-combined <- merge(x=beforeHR_2020, y=afterHR_2020, by="pitcher", all.y = TRUE)
+combined <- merge(x=beforeHR_2019, y=afterHR_2019, by="pitcher", all.y = TRUE)
 
 combined$p_throws.y <- NULL
 names(combined)[6]  <- "totalStrPct_after"
@@ -295,7 +295,7 @@ combined$difference_totalBall <- (combined$totalBallPct_after - combined$totalBa
 
 # write a csv with combined data
 
-write.csv(combined, 'combined_2020.csv')
+write.csv(combined, 'combined_2019.csv')
 
 # add player names 
 
@@ -305,11 +305,11 @@ combined <- merge(x = combined, y = playeridmap, by.x = "pitcher", by.y = "MLBID
 
 # pitching data from qualified pitchers 
 
-fangraphsPitching2020_qualified <- read_csv("~/fangraphsPitching2020_qualified.csv")
+fangraphsPitching2019_qualified <- read_csv("~/fangraphsPitching2019_qualified.csv")
 
-combined <- merge(x = combined, y = fangraphsPitching2020, by.x = "IDFANGRAPHS", by.y = "playerid", all.y = TRUE)
+combined <- merge(x = combined, y = fangraphsPitching2019, by.x = "IDFANGRAPHS", by.y = "playerid", all.y = TRUE)
 
 
 # new csv file that contains the qualified pitchers and their StrPct, BallPct, BIPPct difference
 
-write.csv(combined, 'differenceAfterHR_2020_qualified')
+write.csv(combined, 'differenceAfterHR_2019_qualified')
